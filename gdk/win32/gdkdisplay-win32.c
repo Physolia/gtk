@@ -1181,6 +1181,7 @@ gdk_win32_display_init_gl (GdkDisplay  *display,
 {
   GdkWin32Display *display_win32 = GDK_WIN32_DISPLAY (display);
   HDC init_gl_hdc = NULL;
+  GdkGLContext *ctx = NULL;
 
   if (display_win32->dummy_context_wgl.hdc == NULL)
     display_win32->dummy_context_wgl.hdc = GetDC (display_win32->hwnd);
@@ -1205,39 +1206,50 @@ gdk_win32_display_init_gl (GdkDisplay  *display,
                                 FALSE,
                                 error))
         {
-          return g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_EGL,
-                               "display", display,
-                               NULL);
+          ctx = g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_EGL,
+                              "display", display,
+                              NULL);
         }
       else
         g_clear_error (error);
     }
 #endif
 
-  if (gdk_win32_display_init_wgl (display, error))
+  if (ctx == NULL && gdk_win32_display_init_wgl (display, error))
     {
-      return g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_WGL,
-                           "display", display,
-                           NULL);
+      ctx = g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_WGL,
+                          "display", display,
+                          NULL);
     }
 
 #ifdef HAVE_EGL
   g_clear_error (error);
 
-  if (gdk_display_init_egl (display,
+  if (ctx == NULL &&
+      gdk_display_init_egl (display,
                             EGL_PLATFORM_ANGLE_ANGLE,
                             init_gl_hdc,
                             TRUE,
                             error))
     {
-      return g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_EGL,
-                           "display", display,
-                           NULL);
+      ctx = g_object_new (GDK_TYPE_WIN32_GL_CONTEXT_EGL,
+                          "display", display,
+                          NULL);
 
+    }
+
+  if (ctx != NULL && GDK_IS_WIN32_GL_CONTEXT_EGL (ctx))
+    {
+      EGLDisplay egl_disp = gdk_display_get_egl_display (display);
+      const char *angle_str = "ANGLE ";
+
+      display_win32->is_angle = strncmp (angle_str,
+                                         eglQueryString (egl_disp, EGL_VENDOR),
+                                         strlen (angle_str));
     }
 #endif
 
-  return NULL;
+  return ctx;
 }
 
 /**

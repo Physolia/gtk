@@ -139,6 +139,7 @@ struct _GdkWin32Display
   guint hasEglKHRCreateContext : 1;
   guint hasEglSurfacelessContext : 1;
   EGLint egl_min_swap_interval;
+  guint is_angle : 1;
 #endif
 
   /* HiDPI Items */
