@@ -19,10 +19,6 @@
 
 #include "config.h"
 
-/* Vista or newer */
-#define _WIN32_WINNT 0x0600
-#define WINVER _WIN32_WINNT
-#define NTDDI_VERSION NTDDI_VISTA
 #define COBJMACROS
 
 #include "gtkfilechoosernativeprivate.h"
